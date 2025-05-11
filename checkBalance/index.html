@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include the Web3 library -->
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <!-- Include the jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Include your CSS file -->
+    <link rel="stylesheet" href="./checkBalance.css">
+    <title>Check Balance - Blockchain Ticketing System</title>
+</head>
+<body>
+    <div class="navigation">
+        <a href="../homePage/index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+    
+    <h1><i class="fas fa-search-dollar"></i> Check Balance</h1>
+    
+    <div class="container">
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-coins"></i> Crypto Balance</h2>
+            <p>Check your Sepolia ETH balance by entering your wallet address below.</p>
+            
+            <label for="walletAddress">Enter your wallet address:</label>
+            <input type="text" id="walletAddress" name="walletAddress" placeholder="0x...">
+            
+            <button id="cryptoBalanceButton"><i class="fas fa-search"></i> Check Crypto Balance</button>
+            
+            <div id="cryptoBalance" class="result-label">Crypto Balance: Not checked yet</div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-ticket-alt"></i> Token Balance</h2>
+            <p>Check your ticket token balance by entering the token address below.</p>
+            
+            <label for="tokenAddress">Enter the token address:</label>
+            <input type="text" id="tokenAddress" name="tokenAddress" placeholder="0x...">
+            
+            <button id="tokenBalanceButton"><i class="fas fa-search"></i> Check Token Balance</button>
+            
+            <div id="tokenBalance" class="result-label">Token Balance: Not checked yet</div>
+            <div id="tokenName" class="result-label">Token Name: Not checked yet</div>
+            <div id="tokenSymbol" class="result-label">Token Symbol: Not checked yet</div>
+            <div id="tokenDecimals" class="result-label">Token Decimals: Not checked yet</div>
+            <div id="tokenTotalSupply" class="result-label">Token Total Supply: Not checked yet</div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+<script>
+        // Using MetaMask as the provider instead of a public RPC
+        let web3;
+
+        // Function to initialize Web3 with MetaMask
+        async function initWeb3() {
+            // Modern browsers with MetaMask
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    // Request account access
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    // Check if connected to Sepolia
+                    const chainId = await web3.eth.getChainId();
+                    if (chainId !== 11155111) { // Sepolia Chain ID
+                        alert("Please connect MetaMask to Sepolia Test Network!");
+                    }
+                } catch (error) {
+                    console.error("User denied account access");
+                    alert("Please allow MetaMask access to continue");
+                }
+            } 
+            // Legacy dapp browsers
+            else if (window.web3) {
+                web3 = new Web3(window.web3.currentProvider);
+            } 
+            // If no injected web3 instance is detected, fall back to a public provider
+            else {
+                alert("Please install MetaMask to use this application!");
+                web3 = new Web3("https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161");
+            }
+        }
+
+        // Initialize Web3 when the page loads
+        $(document).ready(function() {
+            initWeb3();
+        });
+
+        // when you click cryptoBalanceButton button, check the balance of the wallet
+        $("#cryptoBalanceButton").click(async function() {
+            if (!web3) {
+                alert("Web3 is not initialized. Please make sure MetaMask is connected.");
+                return;
+            }
+
+            // get the wallet address from the input field
+            const walletAddress = $("#walletAddress").val();
+            // check if the wallet address is valid
+            if (web3.utils.isAddress(walletAddress)) {
+                // Show loading
+                $("#cryptoBalance").html("<strong>Crypto Balance: Loading...</strong>");
+                
+                try {
+                    // get the balance of the wallet
+                    const balance = await web3.eth.getBalance(walletAddress);
+                    // convert the balance from wei to ether
+                    const balanceInEther = web3.utils.fromWei(balance, "ether");
+                    // display the balance
+                    $("#cryptoBalance").html("<strong>Crypto Balance: " + balanceInEther + " Sepolia ETH</strong>");
+                } catch (error) {
+                    console.error("Error getting balance:", error);
+                    $("#cryptoBalance").html("<strong>Crypto Balance: Error fetching data</strong>");
+                }
+            } else {
+                // display an error message if the wallet address is invalid
+                $("#errorMessage").text("Invalid wallet address");
+                $("#errorModal").css("display", "block");
+            }
+        });
+
+        // when you click tokenBalanceButton button, check the balance of the token
+        $("#tokenBalanceButton").click(async function() {
+            if (!web3) {
+                alert("Web3 is not initialized. Please make sure MetaMask is connected.");
+                return;
+            }
+
+            // get the wallet address from the input field
+            const walletAddress = $("#walletAddress").val();
+            // get the token address from the input field
+            const tokenAddress = $("#tokenAddress").val();
+            // check if the wallet address is valid
+            if (web3.utils.isAddress(walletAddress) && web3.utils.isAddress(tokenAddress)) {
+                // Loading indicators
+                $("#tokenBalance").text("Token Balance: Loading...");
+                $("#tokenName").text("Token Name: Loading...");
+                $("#tokenSymbol").text("Token Symbol: Loading...");
+                $("#tokenDecimals").text("Token Decimals: Loading...");
+                $("#tokenTotalSupply").text("Token Total Supply: Loading...");
+                
+                try {
+                    // create a new contract instance using the ERC20 ABI and the token address
+                    const contract = new web3.eth.Contract(IERC20_ABI, tokenAddress);
+                    
+                    // Get all token data
+                    const balance = await contract.methods.balanceOf(walletAddress).call();
+                    $("#tokenBalance").text("Token Balance: " + balance);
+                    
+                    try {
+                        const name = await contract.methods.name().call();
+                        $("#tokenName").text("Token Name: " + name);
+                    } catch (e) {
+                        $("#tokenName").text("Token Name: Not available");
+                    }
+                    
+                    try {
+                        const symbol = await contract.methods.symbol().call();
+                        $("#tokenSymbol").text("Token Symbol: " + symbol);
+                    } catch (e) {
+                        $("#tokenSymbol").text("Token Symbol: Not available");
+                    }
+                    
+                    try {
+                        const decimals = await contract.methods.decimals().call();
+                        $("#tokenDecimals").text("Token Decimals: " + decimals);
+                    } catch (e) {
+                        $("#tokenDecimals").text("Token Decimals: Not available");
+                    }
+                    
+                    try {
+                        const totalSupply = await contract.methods.totalSupply().call();
+                        $("#tokenTotalSupply").text("Token Total Supply: " + totalSupply);
+                    } catch (e) {
+                        $("#tokenTotalSupply").text("Token Total Supply: Not available");
+                    }
+                } catch (error) {
+                    console.error("Error getting token data:", error);
+                    $("#tokenBalance").text("Token Balance: Error fetching data");
+                }
+            } else {
+                // display an error message if the wallet address or token address is invalid
+                $("#errorMessage").text("Invalid wallet address or token address");
+                $("#errorModal").css("display", "block");
+            }
+        });
+
+        // When the user clicks on <span> (x), close the modal
+        $("#closeModal").click(function() {
+            $("#errorModal").css("display", "none");
+        });
+    
+        const IERC20_ABI = [
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "name": "spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+</script>
+</body>
+</html>

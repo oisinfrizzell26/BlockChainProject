@@ -1,0 +1,126 @@
+<!-- 
+    This HTML file is used to create a web page for decrypting a wallet.
+    It includes the necessary libraries (Web3 and jQuery) and a CSS file.
+    The page contains input fields for entering a password and selecting a wallet JSON file.
+    After clicking the "Decrypt Wallet" button, the script uses the Web3 library to decrypt the wallet using the provided password and the selected file.
+    The decrypted wallet address, private key, and keystore are then displayed in the respective textareas.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include the Web3 library -->
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <!-- Include the jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Include your CSS file -->
+    <link rel="stylesheet" href="./decryptWallet.css">
+    <title>Decrypt Wallet - Blockchain Ticketing System</title>
+</head>
+<body>
+    <div class="navigation">
+        <a href="../homePage/index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+    
+    <h1><i class="fas fa-unlock-alt"></i> Decrypt a Wallet</h1>
+    
+    <div class="container">
+        <p>Decrypt your Ethereum wallet by uploading your keystore file and entering your password.</p>
+        
+        <div class="file-input-wrapper">
+            <label for="keystoreFile" class="file-input-label"><i class="fas fa-file-upload"></i> Select Keystore File</label>
+            <input type="file" id="keystoreFile" accept=".json" style="display: none;">
+            <div class="file-name" id="fileName">No file selected</div>
+        </div>
+        
+        <input type="password" id="password" placeholder="Enter your keystore password">
+        <button id="decryptWalletButton"><i class="fas fa-unlock"></i> Decrypt Wallet</button>
+        
+        <label for="walletAddress">Wallet Address:</label>
+        <textarea id="walletAddress" rows="2" cols="50" readonly></textarea>
+        
+        <label for="privateKey">Private Key:</label>
+        <textarea id="privateKey" rows="2" cols="50" readonly></textarea>
+        
+        <label for="keystore">Keystore File:</label>
+        <textarea id="keystore" rows="5" cols="50" readonly></textarea>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+<script>
+        // create a new web3 instance
+        var web3 = new Web3();
+
+        // Display the file name when a file is selected
+        $("#keystoreFile").change(function() {
+            var fileName = $(this).val().split('\\').pop();
+            if (fileName) {
+                $("#fileName").text(fileName);
+            } else {
+                $("#fileName").text("No file selected");
+            }
+        });
+
+        $("#decryptWalletButton").click(function(){
+
+            // return if no password is entered
+            if ($("#password").val() == ""){
+                // show the modal with the error
+                $("#errorMessage").text("Please enter a password");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+
+            // load the contents of the file#
+            var file = $("#keystoreFile")[0].files[0];
+            // return if no file is selected
+            if (!file){
+                    // show the modal with the error
+                    $("#errorMessage").text("Please select a file");
+                    $("#errorModal").css("display", "block");
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e){
+                var keystore = e.target.result;
+                var password = $("#password").val();
+                try {
+                    // decrypt the wallet
+                    var wallet = web3.eth.accounts.decrypt(keystore, password);
+                    // display the wallet address
+                    $("#walletAddress").val(wallet.address);
+                    // display the private key
+                    $("#privateKey").val(wallet.privateKey);
+                    // display the keystore
+                    $("#keystore").val(keystore);
+                } catch (error) {
+                    // show the modal with the error
+                    $("#errorMessage").text(error.message);
+                    $("#errorModal").css("display", "block");
+
+                }
+            };
+            reader.readAsText(file);
+
+
+        });
+
+        // When the user clicks on <span> (x), close the modal
+        $("#closeModal").click(function() {
+            $("#errorModal").css("display", "none");
+        });
+    
+</script>
+</body>
+</html>
