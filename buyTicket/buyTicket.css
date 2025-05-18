@@ -1,0 +1,168 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f0f8f0;  /* Light green */
+    margin: 0;
+    padding: 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+h1 {
+    color: #007e12;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 0;
+    font-size: 2.2rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+h2, h3 {
+    color: #007e12;
+    border-bottom: 2px solid #e0f0e0;
+    padding-bottom: 0.5rem;
+    margin-top: 20px;
+}
+
+.container, #walletDetails, #purchaseSection {
+    max-width: 900px;
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.navigation {
+    background-color: white;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.back-link {
+    color: #007e12;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin: 5px 15px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+button, .btn {
+    background-color: #007e12;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px 0;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0, 126, 18, 0.2);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+button:hover, .btn:hover {
+    background-color: #00a818;
+    box-shadow: 0 5px 12px rgba(0, 126, 18, 0.3);
+    transform: translateY(-2px);
+}
+
+input, textarea {
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    border: 1px dashed #ccc;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input[type="number"] {
+    width: 80px;
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #555;
+}
+
+a {
+    color: #007e12;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #00a818;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 126, 18, 0.2);
+}
+
+.close {
+    color: #007e12;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #00a818;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.ticketInfo {
+    background-color: #f0fff0;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border-left: 4px solid #007e12;
+}
+
+.ticketCounter, .price {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007e12;
+}
+
+#totalCost {
+    color: #007e12;
+    font-weight: bold;
+    font-size: 1.1em;
+} 

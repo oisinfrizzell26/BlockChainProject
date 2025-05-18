@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./buyTicket.css">
+    <title>Buy Event Tickets - Blockchain Ticketing System</title>
+</head>
+<body>
+    <div class="navigation">
+        <a href="../homePage/homePage.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+    
+    <header>
+        <h1><i class="fas fa-shopping-cart"></i> Buy Event Tickets</h1>
+    </header>
+
+    <div class="container">
+        <div class="ticketInfo">
+            <h3><i class="fas fa-info-circle"></i> Event Information</h3>
+            <p>Experience an amazing concert with Oisin's Blockchain Event!</p>
+            <p>Ticket Price: <span class="price" id="ticketPrice">Loading...</span> ETH per ticket</p>
+            <p>Tickets Available: <span class="ticketCounter" id="availableTickets">Loading...</span></p>
+        </div>
+
+        <h2><i class="fas fa-wallet"></i> Connect Your Wallet</h2>
+        <div class="wallet-section">
+            <button id="connectWalletButton"><i class="fas fa-plug"></i> Connect with MetaMask</button>
+        </div>
+
+        <div id="walletDetails" style="display: none;">
+            <label for="walletAddress">Connected Wallet Address:</label>
+            <p id="walletAddress"></p>
+            <label for="walletBalance">Wallet Balance:</label>
+            <p id="walletBalance">Loading...</p>
+        </div>
+        
+        <div id="purchaseSection" style="display: none;">
+            <h2><i class="fas fa-ticket-alt"></i> Purchase Tickets</h2>
+            <label for="ticketAmount">Number of Tickets:</label>
+            <input type="number" id="ticketAmount" min="1" value="1">
+            <p>Total Cost: <span id="totalCost">Loading...</span> ETH</p>
+            <button id="buyTicketsButton"><i class="fas fa-shopping-cart"></i> Buy Tickets</button>
+            <br/>
+            <br/>
+            <label for="transactionResult">Transaction Result:</label>
+            <textarea id="transactionResult" rows="5" cols="50" readonly></textarea>
+        </div>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+<script>
+    // Connect to the Sepolia testnet
+    const web3 = new Web3("https://ethereum-sepolia.publicnode.com");
+    
+    const contractAddress = "0x6235B92645D8EC813C5ebf47CC5D2D28966D7682";
+    
+    // Contract ABI 
+    const ABI = [
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "_name",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "_symbol",
+                    "type": "string"
+                },
+                {
+                    "internalType": "uint8",
+                    "name": "_decimals",
+                    "type": "uint8"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "initialSupply",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_ticketPrice",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_maxTickets",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "value",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Approval",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "buyer",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "TicketPurchased",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "returner",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "TicketReturned",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "value",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Transfer",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "availableTickets",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                }
+            ],
+            "name": "allowance",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "approve",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_numTickets",
+                    "type": "uint256"
+                }
+            ],
+            "name": "buyTicket",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+                {
+                    "internalType": "uint8",
+                    "name": "",
+                    "type": "uint8"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "maxTickets",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "name",
+            "outputs": [
+                {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_numTickets",
+                    "type": "uint256"
+                }
+            ],
+            "name": "returnTicket",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_newPrice",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setTicketPrice",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "soldTickets",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [
+                {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "ticketPrice",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "sender",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "withdrawFunds",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ];
+
+    // Create contract instance
+    const contract = new web3.eth.Contract(ABI, contractAddress);
+    
+    // Variables to store connected account
+    let currentAccount = null;
+    
+    // Load ticket information when page loads
+    $(document).ready(function() {
+        loadTicketInfo();
+        
+        // Update total cost when ticket amount changes
+        $("#ticketAmount").on("input", updateTotalCost);
+        
+        // Connect wallet button
+        $("#connectWalletButton").click(connectWallet);
+        
+        // Buy tickets button
+        $("#buyTicketsButton").click(buyTickets);
+        
+        // Check if MetaMask is already connected
+        if (window.ethereum && window.ethereum.selectedAddress) {
+            connectWallet();
+        }
+    });
+    
+    // Load ticket information from the contract
+    async function loadTicketInfo() {
+        try {
+            // Get ticket price
+            const priceWei = await contract.methods.ticketPrice().call();
+            const priceEth = web3.utils.fromWei(priceWei, 'ether');
+            $("#ticketPrice").text(priceEth);
+            
+            // Get available tickets
+            const available = await contract.methods.availableTickets().call();
+            $("#availableTickets").text(available);
+            
+            // Update total cost for default ticket amount
+            updateTotalCost();
+        } catch (error) {
+            showError("Error loading ticket information: " + error.message);
+        }
+    }
+    
+    // Update the total cost based on ticket amount
+    async function updateTotalCost() {
+        const amount = $("#ticketAmount").val();
+        const priceWei = await contract.methods.ticketPrice().call();
+        const priceEth = web3.utils.fromWei(priceWei, 'ether');
+        const totalCost = (amount * priceEth).toFixed(8);
+        $("#totalCost").text(totalCost);
+    }
+
+    // Connect to MetaMask
+    async function connectWallet() {
+        if (window.ethereum) {
+            try {
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                currentAccount = accounts[0];
+                
+                // Check if connected to Sepolia
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                if (chainId !== '0xaa36a7') {
+                    showError("Please connect MetaMask to the Sepolia Test Network.");
+                    try {
+                        // Try to switch to Sepolia
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0xaa36a7' }], 
+                        });
+                    } catch (switchError) {
+                        // Network not added
+                        showError("Please manually switch to the Sepolia Test Network in MetaMask.");
+                    }
+                    return;
+                }
+                
+                // Update UI
+                $("#walletAddress").text(currentAccount);
+                $("#walletDetails").show();
+                $("#purchaseSection").show();
+                $("#connectWalletButton").html('<i class="fas fa-check"></i> Connected to MetaMask');
+                
+                // Load wallet balance
+                loadWalletBalance(currentAccount);
+                
+                // Listen for account changes
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    currentAccount = accounts[0];
+                    $("#walletAddress").text(currentAccount);
+                    loadWalletBalance(currentAccount);
+                });
+                
+            } catch (error) {
+                showError("User denied account access or another error occurred: " + error.message);
+            }
+        } else {
+            showError("MetaMask is not installed. Please install MetaMask to continue.");
+        }
+    }
+
+    // Load wallet balance
+    async function loadWalletBalance(address) {
+        try {
+            const balanceWei = await web3.eth.getBalance(address);
+            const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+            $("#walletBalance").text(balanceEth + " ETH");
+        } catch (error) {
+            showError("Error loading balance: " + error.message);
+        }
+    }
+
+    // Buy tickets
+    async function buyTickets() {
+        // Get ticket information
+        const numTickets = $("#ticketAmount").val();
+        
+        // Validate inputs
+        if (!currentAccount) {
+            showError("Please connect your wallet first");
+            return;
+        }
+        
+        if (numTickets < 1) {
+            showError("Please enter a valid number of tickets");
+            return;
+        }
+        
+        try {
+            // Get ticket price
+            const priceWei = await contract.methods.ticketPrice().call();
+            const totalCostWei = BigInt(priceWei) * BigInt(numTickets);
+            
+            // Create transaction parameters
+            const txData = contract.methods.buyTicket(numTickets).encodeABI();
+            
+            // Show transaction in progress
+            showError("Preparing transaction. Please confirm in MetaMask...");
+            
+            // Send transaction using MetaMask
+            window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [{
+                    from: currentAccount,
+                    to: contractAddress,
+                    data: txData,
+                    value: '0x' + totalCostWei.toString(16) // Convert to hex
+                }]
+            })
+            .then(function(txHash) {
+                showError("Transaction submitted. Waiting for confirmation.");
+                
+                // Wait for transaction receipt
+                const checkReceipt = setInterval(function() {
+                    web3.eth.getTransactionReceipt(txHash)
+                        .then(function(receipt) {
+                            if (receipt) {
+                                clearInterval(checkReceipt);
+                                $("#transactionResult").val(JSON.stringify(receipt, null, 2));
+                                showError("Tickets purchased successfully. Transaction hash: " + txHash);
+                                
+                                // Reload ticket information and wallet balance
+                                loadTicketInfo();
+                                loadWalletBalance(currentAccount);
+                                
+                                // Show Etherscan link
+                                $("#transactionResult").val($("#transactionResult").val() + 
+                                    "\n\nView on Etherscan: https://sepolia.etherscan.io/tx/" + txHash);
+                            }
+                        })
+                        .catch(console.error);
+                }, 3000); // Check every 3 seconds
+            })
+            .catch(function(error) {
+                showError("Transaction failed: " + error.message);
+            });
+            
+        } catch (error) {
+            showError("Error occurred while purchasing tickets: " + error.message);
+        }
+    }
+
+    // Close the modal when clicking on X
+    $("#closeModal").click(function() {
+        $("#errorModal").css("display", "none");
+    });
+
+    // Show error message in modal
+    function showError(message) {
+        $("#errorMessage").text(message);
+        $("#errorModal").css("display", "block");
+    }
+</script>
+</body>
+</html> 

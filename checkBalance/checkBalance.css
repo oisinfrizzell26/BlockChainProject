@@ -1,7 +1,3 @@
-/* FILEPATH: /c:/dev/web3examples/createWallet/createWallet.css */
-
-/* Blockchain Ticketing System - Check Balance Styles */
-
 body {
     font-family: 'Courier New', Courier, monospace;
     background-color: #f0f8f0;
@@ -39,6 +35,40 @@ h1 {
 
 .section:last-child {
     border-bottom: none;
+}
+
+.role-selector {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #007e12;
+    background-color: #f7fcf7;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+select#userRole {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #007e12;
+    border-radius: 6px;
+    background-color: white;
+    font-family: 'Courier New', Courier, monospace;
+    color: #333;
+    margin-top: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 126, 18, 0.1);
+    transition: all 0.3s ease;
+}
+
+select#userRole:hover {
+    border-color: #00a818;
+    box-shadow: 0 3px 8px rgba(0, 126, 18, 0.2);
+}
+
+select#userRole:focus {
+    outline: none;
+    border-color: #00a818;
+    box-shadow: 0 0 0 3px rgba(0, 126, 18, 0.2);
 }
 
 .section-title {
@@ -105,6 +135,134 @@ label {
 
 .result-label strong {
     color: #007e12;
+}
+
+/* Role specific views */
+.role-view {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Doorman specific styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.verification-result {
+    margin-top: 25px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+
+.valid-ticket, .invalid-ticket, .error-ticket {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.valid-ticket {
+    background-color: #e8f5e9;
+    border: 2px solid #4caf50;
+    color: #2e7d32;
+}
+
+.valid-ticket i {
+    color: #4caf50;
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.invalid-ticket {
+    background-color: #ffebee;
+    border: 2px solid #f44336;
+    color: #c62828;
+}
+
+.invalid-ticket i {
+    color: #f44336;
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.error-ticket {
+    background-color: #fff8e1;
+    border: 2px solid #ffc107;
+    color: #ff8f00;
+}
+
+.error-ticket i {
+    color: #ffc107;
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.wallet-preview {
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Venue specific styles */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.stat-box {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-box i {
+    color: #007e12;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.stat-box h3 {
+    color: #333;
+    margin: 10px 0;
+    font-size: 1.1rem;
+}
+
+.stat-box p {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007e12;
+    margin: 10px 0 0;
+}
+
+/* Venue specific styles */
+#tokenSoldTickets, #tokenAvailableTickets {
+    background-color: #e8f5e9;
+    border-left: 4px solid #007e12;
+}
+
+/* Valid and invalid ticket indicators */
+.valid-ticket {
+    color: #007e12;
+    font-weight: bold;
+}
+
+.invalid-ticket {
+    color: #d32f2f;
+    font-weight: bold;
 }
 
 .navigation {

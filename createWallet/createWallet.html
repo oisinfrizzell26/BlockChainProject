@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Include the Web3 library -->
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
-    <!-- Include the jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Include your CSS file -->
     <link rel="stylesheet" href="./createWallet.css">
     <title>Create a Wallet - Blockchain Ticketing System</title>
 </head>
 <body>
     <div class="navigation">
-        <a href="../homePage/index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        <a href="../homePage/homePage.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
     </div>
     
     <h1><i class="fas fa-wallet"></i> Create a Wallet</h1>
@@ -40,6 +36,13 @@
         </div>
     </div>
 
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
 <script>
     $(document).ready(function(){
         $("#createWalletButton").click(function(){
@@ -47,7 +50,7 @@
              // alert if empty password
             var password = $("#password").val();
              if(password == ""){
-                alert("Please enter a password for the Key Store");
+                showError("Please enter a password for the Key Store.");
                 return;
             }
             // Create a new Web3 instance
@@ -74,7 +77,7 @@
             var keystore = $("#keystore").val();
             // alert if keystore is empty
             if(keystore == ""){
-                alert("Please create a wallet first");
+                showError("Please create a wallet first.");
                 return;
             }
             var blob = new Blob([keystore], {type: "text/plain;charset=utf-8"});
@@ -89,6 +92,15 @@
         a.download = filename;
         a.click();
     }
+
+    function showError(message) {
+        $("#errorMessage").text(message);
+        $("#errorModal").css("display", "block");
+    }
+
+    $("#closeModal").click(function() {
+        $("#errorModal").css("display", "none");
+    });
 </script>
 </body>
 </html>

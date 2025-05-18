@@ -1,28 +1,17 @@
-<!-- 
-    This HTML file is used to create a web page for decrypting a wallet.
-    It includes the necessary libraries (Web3 and jQuery) and a CSS file.
-    The page contains input fields for entering a password and selecting a wallet JSON file.
-    After clicking the "Decrypt Wallet" button, the script uses the Web3 library to decrypt the wallet using the provided password and the selected file.
-    The decrypted wallet address, private key, and keystore are then displayed in the respective textareas.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Include the Web3 library -->
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
-    <!-- Include the jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Include your CSS file -->
     <link rel="stylesheet" href="./decryptWallet.css">
     <title>Decrypt Wallet - Blockchain Ticketing System</title>
 </head>
 <body>
     <div class="navigation">
-        <a href="../homePage/index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        <a href="../homePage/homePage.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
     </div>
     
     <h1><i class="fas fa-unlock-alt"></i> Decrypt a Wallet</h1>
@@ -49,7 +38,6 @@
         <textarea id="keystore" rows="5" cols="50" readonly></textarea>
     </div>
 
-    <!-- Error Modal -->
     <div id="errorModal" class="modal">
         <div class="modal-content">
             <span id="closeModal" class="close">&times;</span>
@@ -116,7 +104,7 @@
 
         });
 
-        // When the user clicks on <span> (x), close the modal
+   
         $("#closeModal").click(function() {
             $("#errorModal").css("display", "none");
         });

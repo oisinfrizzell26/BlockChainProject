@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./checkBalance.css">
+    <title>Check Balance - Blockchain Ticketing System</title>
+</head>
+<body>
+    <div class="navigation">
+        <a href="../homePage/homePage.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+    
+    <h1><i class="fas fa-search-dollar"></i> Check Balance</h1>
+    
+    <div class="container">
+        <div class="role-selector">
+            <h2 class="section-title"><i class="fas fa-user-tag"></i> Select Your Role</h2>
+            <p>Choose your role to customize the balance checking experience.</p>
+            
+            <label for="userRole">I am a:</label>
+            <select id="userRole" name="userRole">
+                <option value="attendee">Attendee - Check my ticket balance</option>
+                <option value="doorman">Doorman - Verify attendee tickets</option>
+                <option value="venue">Venue - Check overall ticket statistics</option>
+            </select>
+        </div>
+        
+        <!-- Attendee View -->
+        <div id="attendeeView" class="role-view">
+            <div class="section" id="cryptoBalanceSection">
+                <h2 class="section-title"><i class="fas fa-coins"></i> Crypto Balance</h2>
+                <p>Check your Sepolia ETH balance by entering your wallet address below.</p>
+                
+                <div id="walletInputArea">
+                    <label for="walletAddress">Enter your wallet address:</label>
+                    <input type="text" id="walletAddress" name="walletAddress" placeholder="0x...">
+                </div>
+                
+                <button id="cryptoBalanceButton"><i class="fas fa-search"></i> Check Crypto Balance</button>
+                
+                <div id="cryptoBalance" class="result-label">Crypto Balance: Not checked yet</div>
+            </div>
+            
+            <div class="section" id="tokenBalanceSection">
+                <h2 class="section-title"><i class="fas fa-ticket-alt"></i> Ticket Balance</h2>
+                <p>Check your ticket token balance for Oisin Concert Ticket (OCT).</p>
+                
+                <div id="tokenAddressArea">
+                    <label for="tokenAddress">Contract Address:</label>
+                    <input type="text" id="tokenAddress" name="tokenAddress" readonly style="background-color: #f0f0f0;">
+                </div>
+                
+                <button id="tokenBalanceButton"><i class="fas fa-search"></i> Check Ticket Balance</button>
+                
+                <div id="tokenBalance" class="result-label">Ticket Balance: Not checked yet</div>
+                <div id="tokenName" class="result-label">Token Name: Not checked yet</div>
+                <div id="tokenSymbol" class="result-label">Token Symbol: Not checked yet</div>
+            </div>
+        </div>
+        
+        <!-- Doorman View -->
+        <div id="doormanView" class="role-view" style="display:none;">
+            <div class="section">
+                <h2 class="section-title"><i class="fas fa-ticket-alt"></i> Ticket Verification</h2>
+                <p>Verify if an attendee has a valid ticket for entry.</p>
+                
+                <div class="form-group">
+                    <label for="doormanWalletAddress">Enter attendee's wallet address:</label>
+                    <input type="text" id="doormanWalletAddress" name="doormanWalletAddress" placeholder="0x...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="doormanTokenAddress">Contract Address (Oisin Concert Ticket):</label>
+                    <input type="text" id="doormanTokenAddress" name="doormanTokenAddress" readonly style="background-color: #f0f0f0;">
+                </div>
+                
+                <button id="verifyTicketButton"><i class="fas fa-check-circle"></i> Verify Ticket</button>
+                
+                <div id="ticketVerificationResult" class="verification-result">
+                    <p>Verification result will appear here</p>
+                </div>
+            </div>
+        </div>
+        
+       
+        <div id="venueView" class="role-view" style="display:none;">
+            <div class="section">
+                <h2 class="section-title"><i class="fas fa-chart-pie"></i> Ticket Distribution</h2>
+                <p>Viewing statistics for your event ticket contract.</p>
+                
+                <div class="form-group contract-address-display">
+                    <label>Contract Address (Oisin Concert Ticket):</label>
+                    <div class="address-display" id="displayedContractAddress">Not set</div>
+                </div>
+                
+                <div class="loading-spinner" id="venueLoadingSpinner" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading statistics...
+                </div>
+                
+                <div class="stats-container">
+                    <div id="eventName" class="stat-box">
+                        <i class="fas fa-tag"></i>
+                        <h3>Event Name</h3>
+                        <p>Not checked yet</p>
+                    </div>
+                    
+                    <div id="ticketsSold" class="stat-box">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Tickets Sold</h3>
+                        <p>Not checked yet</p>
+                    </div>
+                    
+                    <div id="ticketsAvailable" class="stat-box">
+                        <i class="fas fa-ticket-alt"></i>
+                        <h3>Tickets Available</h3>
+                        <p>Not checked yet</p>
+                    </div>
+                    
+                    <div id="totalSupply" class="stat-box">
+                        <i class="fas fa-boxes"></i>
+                        <h3>Total Supply</h3>
+                        <p>Not checked yet</p>
+                    </div>
+                </div>
+                
+                <button id="refreshStatsButton" class="refresh-button">
+                    <i class="fas fa-sync-alt"></i> Refresh Statistics
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+<script>
+        // Using MetaMask as the provider 
+        let web3;
+        let contract;
+        
+        // The contract address 
+        const CONTRACT_ADDRESS = "0x6235B92645D8EC813C5ebf47CC5D2D28966D7682";
+        
+        
+        const activeContractAddress = CONTRACT_ADDRESS;
+
+        // Function to initialize Web3 with MetaMask
+        async function initWeb3() {
+            // Modern browsers with MetaMask
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    // Request account access
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    // Check if connected to Sepolia
+                    const chainId = await web3.eth.getChainId();
+                    if (chainId !== 11155111) { 
+                        showError("Please connect MetaMask to the Sepolia Test Network.");
+                    }
+                } catch (error) {
+                    console.error("User denied account access");
+                    showError("Please allow MetaMask access to continue.");
+                }
+            } 
+            // Legacy dapp browsers
+            else if (window.web3) {
+                web3 = new Web3(window.web3.currentProvider);
+            } 
+            // If no injected web3 instance is detected, fall back to a public provider
+            else {
+                showError("MetaMask is required to use this application. Please install MetaMask.");
+                web3 = new Web3("https://ethereum-sepolia.publicnode.com");
+            }
+        }
+
+        // Initialize Web3 when the page loads
+        $(document).ready(function() {
+            initWeb3();
+            
+            // Auto-fill contract addresses
+            $("#tokenAddress").val(CONTRACT_ADDRESS);
+            $("#doormanTokenAddress").val(CONTRACT_ADDRESS);
+            $("#displayedContractAddress").text(CONTRACT_ADDRESS);
+            
+            // Set up role selector change event
+            $("#userRole").change(function() {
+                updateUIForRole($(this).val());
+            });
+            
+            
+            $("#refreshStatsButton").click(loadVenueStatistics);
+            
+            // Initial UI setup based on default role
+            updateUIForRole($("#userRole").val());
+        });
+        
+        // Update the UI based on the selected role
+        function updateUIForRole(role) {
+            // Hide all role views first
+            $(".role-view").hide();
+            
+            switch(role) {
+                case "attendee":
+                    $("#attendeeView").show();
+                    break;
+                    
+                case "doorman":
+                    $("#doormanView").show();
+                    break;
+                    
+                case "venue":
+                    $("#venueView").show();
+                    // Automatically load the venue statistics
+                    loadVenueStatistics();
+                    break;
+            }
+        }
+        
+        // Function to load venue statistics
+        async function loadVenueStatistics() {
+            if (!web3) {
+                showError("Web3 is not initialized. Please ensure MetaMask is connected.");
+                return;
+            }
+            
+            // Show loading spinner
+            $("#venueLoadingSpinner").show();
+            
+            // Set loading states
+            $("#eventName p").html("<i class='fas fa-spinner fa-spin'></i>");
+            $("#ticketsSold p").html("<i class='fas fa-spinner fa-spin'></i>");
+            $("#ticketsAvailable p").html("<i class='fas fa-spinner fa-spin'></i>");
+            $("#totalSupply p").html("<i class='fas fa-spinner fa-spin'></i>");
+            
+            try {
+                // Create the contract instance with the active address
+                contract = new web3.eth.Contract(TOKEN_ABI, activeContractAddress);
+                
+                // Get event name
+                try {
+                    const name = await contract.methods.name().call();
+                    $("#eventName p").text(name);
+                } catch (e) {
+                    $("#eventName p").text("Not available");
+                }
+                
+                // Get total supply
+                try {
+                    const totalSupply = await contract.methods.totalSupply().call();
+                    $("#totalSupply p").text(totalSupply);
+                } catch (e) {
+                    $("#totalSupply p").text("Not available");
+                }
+                
+                // Get tickets sold and available
+                try {
+                    // Check if this contract has the specific ticket contract functions
+                    const soldTickets = await contract.methods.soldTickets().call();
+                    $("#ticketsSold p").text(soldTickets);
+                    
+                    const availableTickets = await contract.methods.availableTickets().call();
+                    $("#ticketsAvailable p").text(availableTickets);
+                } catch (e) {
+                    $("#ticketsSold p").text("Not available");
+                    $("#ticketsAvailable p").text("Not available");
+                }
+                
+            } catch (error) {
+                console.error("Error getting distribution data:", error);
+                $("#eventName p").text("Error");
+                $("#ticketsSold p").text("Error");
+                $("#ticketsAvailable p").text("Error");
+                $("#totalSupply p").text("Error");
+            } finally {
+                // Hide loading spinner
+                $("#venueLoadingSpinner").hide();
+            }
+        }
+
+        // Attendee: Check crypto balance
+        $("#cryptoBalanceButton").click(async function() {
+            if (!web3) {
+                showError("Web3 is not initialized. Please ensure MetaMask is connected.");
+                return;
+            }
+
+            // get the wallet address from the input field
+            const walletAddress = $("#walletAddress").val();
+            // check if the wallet address is valid
+            if (web3.utils.isAddress(walletAddress)) {
+                // Show loading
+                $("#cryptoBalance").html("<strong>Crypto Balance: Loading...</strong>");
+                
+                try {
+                    // get the balance of the wallet
+                    const balance = await web3.eth.getBalance(walletAddress);
+                    // convert the balance from wei to ether
+                    const balanceInEther = web3.utils.fromWei(balance, "ether");
+                    // display the balance
+                    $("#cryptoBalance").html("<strong>Crypto Balance: " + balanceInEther + " Sepolia ETH</strong>");
+                } catch (error) {
+                    console.error("Error getting balance:", error);
+                    $("#cryptoBalance").html("<strong>Crypto Balance: Error fetching data</strong>");
+                }
+            } else {
+                // display an error message if the wallet address is invalid
+                $("#errorMessage").text("Invalid wallet address");
+                $("#errorModal").css("display", "block");
+            }
+        });
+
+        // Attendee: Check token balance
+        $("#tokenBalanceButton").click(async function() {
+            if (!web3) {
+                showError("Web3 is not initialized. Please ensure MetaMask is connected.");
+                return;
+            }
+            
+            const walletAddress = $("#walletAddress").val();
+            const tokenAddress = $("#tokenAddress").val();
+            
+            // Check if addresses are valid
+            if (!web3.utils.isAddress(walletAddress)) {
+                $("#errorMessage").text("Invalid wallet address");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+            
+            if (!web3.utils.isAddress(tokenAddress)) {
+                $("#errorMessage").text("Invalid token address");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+            
+            // Create the contract instance
+            contract = new web3.eth.Contract(TOKEN_ABI, tokenAddress);
+            
+            // Set loading states
+            $("#tokenBalance").text("Ticket Balance: Loading...");
+            $("#tokenName").text("Token Name: Loading...");
+            $("#tokenSymbol").text("Token Symbol: Loading...");
+            
+            try {
+                // Get token balance and info
+                const balance = await contract.methods.balanceOf(walletAddress).call();
+                $("#tokenBalance").text("Ticket Balance: " + balance + " tickets");
+                
+                // Get basic token info
+                try {
+                    const name = await contract.methods.name().call();
+                    $("#tokenName").text("Token Name: " + name);
+                } catch (e) {
+                    $("#tokenName").text("Token Name: Not available");
+                }
+                
+                try {
+                    const symbol = await contract.methods.symbol().call();
+                    $("#tokenSymbol").text("Token Symbol: " + symbol);
+                } catch (e) {
+                    $("#tokenSymbol").text("Token Symbol: Not available");
+                }
+            } catch (error) {
+                console.error("Error getting token data:", error);
+                $("#tokenBalance").text("Ticket Balance: Error fetching data");
+                $("#tokenName").text("Token Name: Error fetching data");
+                $("#tokenSymbol").text("Token Symbol: Error fetching data");
+            }
+        });
+        
+        // Doorman: Verify ticket
+        $("#verifyTicketButton").click(async function() {
+            if (!web3) {
+                showError("Web3 is not initialized. Please ensure MetaMask is connected.");
+                return;
+            }
+            
+            const walletAddress = $("#doormanWalletAddress").val();
+            const tokenAddress = $("#doormanTokenAddress").val();
+            
+            // Check if addresses are valid
+            if (!web3.utils.isAddress(walletAddress)) {
+                $("#errorMessage").text("Invalid wallet address");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+            
+            if (!web3.utils.isAddress(tokenAddress)) {
+                $("#errorMessage").text("Invalid token address");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+            
+            // Create the contract instance
+            contract = new web3.eth.Contract(TOKEN_ABI, tokenAddress);
+            
+            // Set loading state
+            $("#ticketVerificationResult").html("<p><i class='fas fa-spinner fa-spin'></i> Verifying ticket...</p>");
+            
+            try {
+                // Get token balance and info
+                const balance = await contract.methods.balanceOf(walletAddress).call();
+                let name = "Ticket";
+                
+                // Try to get the token name
+                try {
+                    name = await contract.methods.name().call();
+                } catch (e) {
+                    // Use default name if not available
+                }
+                
+                // Display verification result
+                if (balance > 0) {
+                    $("#ticketVerificationResult").html(`
+                        <div class="valid-ticket">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>VALID TICKET</h3>
+                            <p>This wallet holds ${balance} ${name} ticket(s)</p>
+                            <p class="wallet-preview">${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}</p>
+                        </div>
+                    `);
+                } else {
+                    $("#ticketVerificationResult").html(`
+                        <div class="invalid-ticket">
+                            <i class="fas fa-times-circle"></i>
+                            <h3>NO VALID TICKET</h3>
+                            <p>This wallet does not hold any ${name} tickets</p>
+                            <p class="wallet-preview">${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}</p>
+                        </div>
+                    `);
+                }
+            } catch (error) {
+                console.error("Error verifying ticket:", error);
+                $("#ticketVerificationResult").html(`
+                    <div class="error-ticket">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>VERIFICATION ERROR</h3>
+                        <p>Could not verify ticket status. Please check the addresses and try again.</p>
+                    </div>
+                `);
+            }
+        });
+
+        // When the user clicks on <span> (x), close the modal
+        $("#closeModal").click(function() {
+            $("#errorModal").css("display", "none");
+        });
+    
+        const TOKEN_ABI = [
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "name": "spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "soldTickets",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "availableTickets",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+</script>
+</body>
+</html>
